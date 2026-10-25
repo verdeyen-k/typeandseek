@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Type and Seek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg1: #1b1640; --bg2: #3a2a6b;
+    --ink: #fff7ec; --muted: #b9b0d8;
+    --card: rgba(255,255,255,0.08); --line: rgba(255,255,255,0.14);
+    --accent: #ffb84d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg1); }
+  body { margin: 0; color: var(--ink); font-family: 'Fredoka', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg2), var(--bg1)) no-repeat, var(--bg1); min-height: 100vh; }
+  button, input, textarea { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+  .screen { max-width: 560px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; gap: 14px;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  h1 { margin: 0; font-size: clamp(44px, 13vw, 64px); line-height: .95; text-align: center; letter-spacing: 1px; }
+  h1 small { display: block; font-size: .3em; color: var(--muted); letter-spacing: 3px; margin-top: 8px; font-weight: 500; }
+  h2 { margin: 0; font-size: 22px; }
+  p { margin: 0; line-height: 1.4; }
+  .muted { color: var(--muted); }
+  .center { text-align: center; }
+  .card { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn { border-radius: 16px; padding: 12px 18px; font-size: 18px; font-weight: 600; cursor: pointer;
+    background: var(--card); border: 2px solid var(--line); transition: transform .08s; }
+  .btn:active:not(:disabled) { transform: scale(.96); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.primary { background: var(--accent); color: #2b1d00; border-color: transparent; box-shadow: 0 5px 0 #c17c18; }
+  .btn.primary:active:not(:disabled) { box-shadow: 0 2px 0 #c17c18; transform: translateY(3px); }
+  .btn.small { padding: 6px 12px; font-size: 15px; border-radius: 12px; }
+  .field { width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); font-size: 18px; outline: none; }
+  .field:focus { border-color: var(--accent); }
+  textarea.field { resize: none; min-height: 56px; }
+  .code-in { width: 7em; text-transform: uppercase; letter-spacing: 5px; text-align: center; font-weight: 700; }
+  .error { color: #ff8a8a; min-height: 1.4em; }
+  .roles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .roles li { display: flex; gap: 10px; align-items: flex-start; }
+  .roles .ic { font-size: 24px; line-height: 1; }
+  ul.plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.plain li { display: flex; gap: 8px; align-items: center; }
+  .pname { font-weight: 600; }
+  .code { font-size: 42px; font-weight: 700; letter-spacing: 8px; text-align: center; }
+  #maxq { width: 5em; text-align: center; }
+
+  /* Game */
+  #game { height: 100vh; height: 100dvh; min-height: 0; gap: 10px; }
+  .top { display: flex; align-items: center; gap: 10px; }
+  .top .spacer { flex: 1; }
+  #role { --c: var(--accent); display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 16px;
+    background: color-mix(in srgb, var(--c) 22%, transparent); border: 2px solid var(--c); }
+  #role-icon { font-size: 34px; line-height: 1; }
+  #role-name { font-weight: 700; font-size: 19px; }
+  #role-tip { font-size: 15px; color: var(--ink); opacity: .9; }
+  #log { flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px; }
+  .qa { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .q { font-weight: 600; font-size: 18px; display: flex; gap: 8px; align-items: baseline; }
+  .qn { background: #4dabf7; color: #0b2338; border-radius: 8px; padding: 0 7px; font-size: 14px; font-weight: 700; flex: none; }
+  .ans { display: flex; gap: 8px; align-items: baseline; padding-left: 4px; }
+  .who { font-weight: 700; color: var(--accent); flex: none; }
+  .who::after { content: ':'; }
+  .act { display: flex; flex-direction: column; gap: 8px; }
+  .act .row { flex-wrap: nowrap; align-items: stretch; }
+  .act .field { flex: 1; }
+  #guess-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { --c: var(--accent); font-size: 14px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--c) 30%, transparent); border: 2px solid var(--c); white-space: nowrap; }
+
+  #over { position: fixed; inset: 0; background: rgba(10,6,30,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #over .card { background: var(--bg2); max-width: 420px; width: 100%; }
+  #result-title { font-size: 28px; }
+</style>
+</head>
+<body>
+
+<section class="screen" id="menu">
+  <h1>Type and Seek<small>FIND THE HIDER</small></h1>
+  <div class="card">
+    <h2>How to play</h2>
+    <ul class="roles">
+      <li><span class="ic">🔎</span><p><b>The seeker</b> types questions to everyone, then gets one guess at who the hider is.</p></li>
+      <li><span class="ic">🙈</span><p><b>The hider</b> has to answer every question truthfully, without getting caught.</p></li>
+      <li><span class="ic">🎭</span><p><b>The fakies</b> know who the hider is. They can lie to confuse the seeker and protect the hider.</p></li>
+    </ul>
+    <p class="muted">3 or more players, each on their own device. Roles are picked at random and kept secret.</p>
+  </div>
+  <div class="card">
+    <input class="field" id="name" maxlength="16" placeholder="Your name" autocomplete="nickname">
+    <button class="btn primary" id="create" type="button">Create a room</button>
+    <div class="row"><input class="field code-in" id="join-code" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn" id="join" type="button">Join</button></div>
+    <p class="error" id="menu-error"></p>
+  </div>
+</section>
+
+<section class="screen" id="lobby" hidden>
+  <h1>Type and Seek</h1>
+  <div class="card">
+    <p class="muted center">Room code: friends type this on their own device to join.</p>
+    <div class="code" id="code"></div>
+  </div>
+  <div class="card">
+    <h2>Players</h2>
+    <ul class="plain" id="lobby-players"></ul>
+  </div>
+  <div class="card">
+    <div class="row"><label for="maxq">Questions the seeker can ask</label><input class="field" type="number" id="maxq" min="1" max="50" inputmode="numeric"></div>
+  </div>
+  <div class="row">
+    <button class="btn primary" id="start" type="button">Start</button>
+    <span class="muted" id="lobby-wait">Waiting for the host to start…</span>
+    <button class="btn" id="lobby-leave" type="button">Leave</button>
+  </div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="top">
+    <b id="qcount"></b>
+    <span class="spacer"></span>
+    <span class="muted">Room <b id="game-code"></b></span>
+    <button class="btn small" id="game-leave" type="button">Leave</button>
+  </div>
+  <div id="role"><span id="role-icon"></span><div><div id="role-name"></div><div id="role-tip"></div></div></div>
+  <div id="log"></div>
+
+  <div class="act" id="act-ask" hidden>
+    <div class="row"><textarea class="field" id="q-input" rows="2" placeholder="Type a question for everyone…"></textarea><button class="btn primary" id="ask" type="button">Ask</button></div>
+    <div class="row"><span class="muted" id="ask-left"></span><span style="flex:1"></span><button class="btn small" id="guess-open" type="button">🔎 I know who it is!</button></div>
+  </div>
+  <div class="act" id="act-answer" hidden>
+    <p><b id="answer-q"></b></p>
+    <p class="muted" id="answer-tip"></p>
+    <div class="row"><textarea class="field" id="a-input" rows="2" placeholder="Type your answer…"></textarea><button class="btn primary" id="answer" type="button">Send</button></div>
+  </div>
+  <div class="act" id="act-guess" hidden>
+    <p><b id="guess-title"></b></p>
+    <div id="guess-list"></div>
+    <button class="btn small" id="guess-cancel" type="button" style="align-self:flex-start">Not yet, keep asking</button>
+  </div>
+  <div class="act" id="act-wait" hidden>
+    <p class="muted center" id="wait-text"></p>
+  </div>
+</section>
+
+<div id="over" hidden>
+  <div class="card">
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <ul class="plain" id="result-roles"></ul>
+    <div class="row">
+      <button class="btn primary" id="again" type="button">Play again</button>
+      <span class="muted" id="again-wait">Waiting for the host…</span>
+      <button class="btn" id="over-leave" type="button">Leave</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="typeandseek.js?v=1"></script>
+</body>
+</html>
